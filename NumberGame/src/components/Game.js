@@ -6,10 +6,12 @@ import RandomNumber from './RandomNumber';
 class Game extends Component {
   static propTypes = {
     randomNumberCount: propTypes.number.isRequired,
+    initialSeconds: propTypes.number.isRequired,
   };
 
   state = {
     selectedIds: [],
+    remainingSeconds: this.props.initialSeconds,
   };
 
   randomNumbers = Array.from({length: this.props.randomNumberCount}).map(() =>
@@ -20,14 +22,34 @@ class Game extends Component {
     .slice(0, this.props.randomNumberCount - 2)
     .reduce((acc, curr) => acc + curr, 0);
 
+  componentDidMount() {
+    this.intervalId = setInterval(() => {
+      this.setState(prevState => {
+          return {remainingSeconds: prevState.remainingSeconds - 1};
+        },
+        () => {
+          if (this.state.remaningSeconds === 0) {
+            clearInterval(this.intervalId);
+          }
+        },
+      );
+    }, 1000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.intervalId);
+  }
+
   isSelected = numberIndex => {
     return this.state.selectedIds.indexOf(numberIndex) >= 0;
   };
+
   selectedNumber = numberIndex => {
     this.setState(prevState => ({
       selectedIds: [...prevState.selectedIds, numberIndex],
     }));
   };
+
   gameStatus = () => {
     const sumSelected = this.state.selectedIds.reduce((acc, curr) => {
       return acc + this.randomNumbers[curr];
@@ -48,21 +70,21 @@ class Game extends Component {
     return (
       <View style={styles.container}>
         <View style={styles.containerTitle}>
-          <Text style={styles.target}>{this.target}</Text>
+          <Text style={[styles.target, styles[`STATUS_${gameStatus}`]]}>{this.target}</Text>
         </View>
+        <Text>{this.state.remainingSeconds}</Text>
         <View style={styles.randomNumberContainer}>
           {this.randomNumbers.map((ranNum, index) =>
-            <RandomNumber 
+            <RandomNumber
               key={index}
               id={index}
               number={ranNum}
               onPress={this.selectedNumber}
-              isDisabled={this.isSelected(index)}
+              isDisabled={this.isSelected(index) || gameStatus != 'PLAYING'}
             />
           )}
           {/* To do suffle the random numbers */}
         </View>
-          <Text>{gameStatus}</Text>
       </View>
     );
   }
@@ -89,6 +111,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-around',
     alignContent: 'flex-start',
+  },
+  STATUS_PLAYING: {
+    backgroundColor: '#bbb',
+  },
+  STATUS_WON: {
+    backgroundColor: 'green',
+  },
+  STATUS_LOST: {
+    backgroundColor: 'red',
   },
 });
 
