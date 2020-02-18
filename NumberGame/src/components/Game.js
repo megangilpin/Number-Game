@@ -4,15 +4,13 @@ import {View, Text, StyleSheet} from 'react-native';
 import RandomNumber from './RandomNumber';
 
 class Game extends Component {
-  static propTypes = {
-    randomNumberCount: propTypes.number.isRequired,
-    initialSeconds: propTypes.number.isRequired,
-  };
-
-  state = {
-    selectedIds: [],
-    remainingSeconds: this.props.initialSeconds,
-  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      selectedIds: [],
+      remainingSeconds: this.props.initialSeconds,
+    };
+  }
 
   randomNumbers = Array.from({length: this.props.randomNumberCount}).map(() =>
     Math.floor(Math.random() * 10),
@@ -28,7 +26,7 @@ class Game extends Component {
           return {remainingSeconds: prevState.remainingSeconds - 1};
         },
         () => {
-          if (this.state.remaningSeconds === 0) {
+          if (this.state.remainingSeconds === 0) {
             clearInterval(this.intervalId);
           }
         },
@@ -49,11 +47,20 @@ class Game extends Component {
       selectedIds: [...prevState.selectedIds, numberIndex],
     }));
   };
-
-  gameStatus = () => {
+  shouldComponetUdpate(nextState) {
+    return (
+      nextState.selectedIds !== this.state.selectedIds ||
+      this.state.remainingSeconds === 0
+    );
+  }
+  // gameStatus: PLAYING, WON, LOST
+  calcGameStatus = () => {
     const sumSelected = this.state.selectedIds.reduce((acc, curr) => {
       return acc + this.randomNumbers[curr];
     }, 0);
+    if (this.state.remainingSeconds === 0) {
+      return 'LOST';
+    }
     if (sumSelected < this.target) {
       return 'PLAYING';
     }
@@ -66,7 +73,7 @@ class Game extends Component {
   };
 
   render() {
-    const gameStatus = this.gameStatus();
+    const gameStatus = this.calcGameStatus();
     return (
       <View style={styles.container}>
         <View style={styles.containerTitle}>
